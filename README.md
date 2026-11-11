@@ -36,6 +36,7 @@ The center verse is kept in the URL (`index.html#Alma%2032%3A21`), so you can bo
 | `js/vendor/cytoscape.min.js` | Cytoscape.js 3.30.2, saved locally so the page works offline |
 | `data/verses.js` | All 41,995 verses (generated) |
 | `tools/build_data.py` | Rebuilds `data/verses.js` from the SQLite database |
+| `tools/scrape_conference.py` | Downloads general conference talks into `data/talks/` |
 
 ## How verses are chosen
 
@@ -57,10 +58,65 @@ The data comes from the public-domain export at github.com/beandog/lds-scripture
 python tools/build_data.py
 ```
 
-It reads `tools/source/lds-scriptures-sqlite.db` by default, or a database path you pass as an argument.
+It reads `tools/source/lds-scriptures-sqlite.db` by default, or a database path you pass as an argument. That file isn't in the repo; download it once:
+
+```bash
+curl -L -o tools/source/lds-scriptures-sqlite.db https://raw.githubusercontent.com/beandog/lds-scriptures/2020.12.08/sqlite/lds-scriptures-sqlite.db
+```
+
+## Conference talks
+
+`tools/scrape_conference.py` downloads general conference talks from churchofjesuschrist.org, with permission. The parsed talks in `data/talks/` are committed. Wherever the app shows a quote, it must link to the original talk (see "Linking back to the source" below). The raw downloaded pages in `tools/cache/` are in `.gitignore`.
+
+```bash
+python tools/scrape_conference.py 2026/10 2026/04
+```
+
+- It waits 1.5 seconds between downloads (`--delay` changes this) and caches every page in `tools/cache/`. Running it again re-parses from the cache; `--refresh` downloads again.
+- It needs the source database above to turn scripture links into verse titles.
+- Each conference is written to `data/talks/YYYY-MM.js`, and `data/talks/manifest.js` lists the conferences downloaded.
+
+Each conference file adds one entry to `window.TALK_DATA`:
+
+```js
+{
+  conference: { id: '2026-10', title: 'October 2026 general conference', year: 2026, month: 10,
+                url, sessions: ['Saturday Morning Session', ...] },
+  talks: [{
+    slug: '12gong', title: 'Come to the Lord in His Holy House',
+    speaker: 'Elder Gerrit W. Gong',          // as printed on the talk
+    name: 'Gerrit W. Gong',                   // name only
+    role: 'Of the Quorum of the Twelve Apostles',
+    kicker, session: 'Saturday Morning Session', url,
+    paragraphs: [{
+      id: 'p_bEYFr',                          // the site's paragraph id, for deep links
+      text,
+      notes: [1],                             // footnote numbers in this paragraph
+      cites: ['Moses 1:39'],                  // verses cited; same titles as data/verses.js
+      chapters: ['Alma 32'],                  // whole chapters cited
+      heading: true, quote: true,             // only when true
+    }],
+    notes: { '1': 'See Moses 1:39.' },
+  }],
+}
+```
+
+### Linking back to the source
+
+Every quote shown in the app should link to where it came from. Each talk has its `url`, and each paragraph its `id`, so a link can go straight to the paragraph:
+
+```js
+const link = `${talk.url}&id=${para.id}#${para.id}`;
+// https://www.churchofjesuschrist.org/study/general-conference/2026/10/12gong?lang=eng&id=p_bEYFr#p_bEYFr
+```
+
+Fall back to `talk.url` if a paragraph has no `id`.
+
+Citations come from the scripture links in each talk's footnotes and text, so they're exact. Links to the Guide to the Scriptures and other study helps are left out. The site gives only the month and year for each conference, not the date of each session.
 
 ## Tests
 
 ```bash
 node --test
+python -m unittest discover tools/tests
 ```

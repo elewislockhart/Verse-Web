@@ -1,0 +1,1 @@
+window.TALK_MANIFEST=["2026-10"];

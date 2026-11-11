@@ -4,3 +4,6 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+
+# Raw downloaded conference pages (the parsed talks in data/talks/ are committed)
+tools/cache/
