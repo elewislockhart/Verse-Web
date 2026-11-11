@@ -1,1 +1,1 @@
-window.TALK_MANIFEST=["2026-10"];
+window.TALK_MANIFEST=["2026-04", "2026-10"];
