@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verse Web</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Verse Web</h1>
+    <form id="ref-form" class="ref-form" autocomplete="off">
+      <label for="ref-input" class="sr-only">Starting verse</label>
+      <div class="ref-box">
+        <input id="ref-input" type="search" placeholder="Find a starting verse: Alma 32:21, Moroni 7, or words like pure love" spellcheck="false" aria-autocomplete="list" aria-controls="ref-suggest">
+        <ul id="ref-suggest" class="suggest" role="listbox" hidden></ul>
+      </div>
+      <button type="submit">Go</button>
+      <button type="button" id="random-btn" class="ghost" title="Pick a random verse">Random</button>
+    </form>
+  </header>
+
+  <main class="layout">
+    <aside class="controls" aria-label="Web settings">
+      <section>
+        <h2>Keywords</h2>
+        <p class="hint">From the center verse. Click one to switch it off.</p>
+        <div id="auto-chips" class="chips"></div>
+      </section>
+
+      <section>
+        <h2>Your keywords</h2>
+        <form id="kw-form" class="kw-form" autocomplete="off">
+          <label for="kw-input" class="sr-only">Add a keyword</label>
+          <input id="kw-input" type="text" placeholder="Add a word, e.g. charity" spellcheck="false">
+          <button type="submit">Add</button>
+        </form>
+        <div id="user-chips" class="chips"></div>
+      </section>
+
+      <section>
+        <h2>Volumes</h2>
+        <div id="volumes" class="volumes"></div>
+      </section>
+
+      <section>
+        <h2><label for="branch-slider">Verses around the center: <span id="branch-count">12</span></label></h2>
+        <input id="branch-slider" type="range" min="5" max="40" value="12">
+        <h2 class="sub"><label for="limit-slider">Word limit: <span id="limit-count">3 lines</span></label></h2>
+        <input id="limit-slider" type="range" min="1" max="11" value="3" aria-describedby="limit-hint">
+        <p id="limit-hint" class="hint">Most lines any one word can appear on. Slide all the way right for no limit.</p>
+        <label class="field">Line labels
+          <select id="label-mode">
+            <option value="all">On every line</option>
+            <option value="center">Center lines only</option>
+            <option value="hover">When hovered</option>
+          </select>
+        </label>
+      </section>
+
+      <p id="stats" class="hint"></p>
+    </aside>
+
+    <section class="stage">
+      <div id="cy" aria-label="Verse web graph"></div>
+      <div id="message" class="message" role="status" hidden>
+        <span id="message-text"></span>
+        <button type="button" id="message-close" class="ghost close-msg" aria-label="Dismiss message">×</button>
+      </div>
+      <div id="loading" class="loading">Loading the scriptures…</div>
+    </section>
+
+    <aside id="panel" class="panel" hidden aria-live="polite">
+      <button id="panel-close" class="ghost close" aria-label="Close">×</button>
+      <div id="panel-pair" hidden></div>
+      <div id="panel-single">
+      <h2 id="panel-title"></h2>
+      <p id="panel-volume" class="hint"></p>
+      <p class="hint legend"><b>Bold</b>: words on a line to this verse. <u>Underlined</u>: other keywords.</p>
+      <p id="panel-text" class="verse-text"></p>
+      <p id="panel-links" class="hint"></p>
+      <button id="panel-center" type="button">Make this the center</button>
+      </div>
+    </aside>
+  </main>
+
+  <script src="js/vendor/cytoscape.min.js"></script>
+  <script src="js/stopwords.js"></script>
+  <script src="js/text.js"></script>
+  <script src="js/graph.js"></script>
+  <script src="data/verses.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

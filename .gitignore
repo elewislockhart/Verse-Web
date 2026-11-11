@@ -1,0 +1,6 @@
+# Source database: download it to rebuild data/verses.js (see README)
+tools/source/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
