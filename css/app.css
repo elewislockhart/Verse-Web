@@ -141,7 +141,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .close-msg { flex: none; padding: 0 7px; font-size: 16px; line-height: 1.3; border: 0; }
 
 .panel {
-  width: 340px; overflow-y: auto; padding: 16px; position: relative;
+  width: 380px; overflow-y: auto; padding: 16px; position: relative;
   border-left: 1px solid var(--border); background: var(--surface);
 }
 .panel h2 { margin: 0 32px 2px 0; font-size: 18px; }
@@ -156,6 +156,28 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .pair-verse h3 { margin: 0; font-size: 16px; }
 .pair-verse .verse-text { margin: 6px 0 8px; }
 .pair-verse button { font-size: 13px; padding: 4px 10px; }
+
+/* Keywords in the verse are toggles for the quote filter. */
+.verse-text .kw { cursor: pointer; border-radius: 4px; padding: 0 1px; }
+.verse-text .kw:hover { background: var(--node); }
+.verse-text .kw:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.verse-text .kw-on { background: var(--warn-bg); color: var(--text); box-shadow: inset 0 -2px 0 var(--highlight); }
+
+.quotes { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 12px; }
+.quotes h3 { margin: 0 0 6px; font-size: 15px; }
+.quote-filter { font-size: 13px; margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.quote-filter .hint { margin: 0; }
+.quote-filter .pick { padding: 1px 9px; font-size: 13px; border-radius: 12px;
+  background: var(--warn-bg); color: var(--text); border-color: var(--highlight); }
+.quote { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; margin: 0 0 16px; }
+.quote-text { margin: 0 0 6px; font-family: Georgia, "Times New Roman", serif; font-size: 15px; line-height: 1.55; }
+.quote-text b { color: var(--accent); }
+.quote-src { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+.quote-src a { color: var(--accent); font-weight: 600; }
+.quote-why { display: inline-block; font-size: 11.5px; padding: 1px 8px; border-radius: 10px;
+  background: var(--off-bg); color: var(--muted); }
+.quote-why.cites { background: var(--node); color: var(--text); border: 1px solid var(--node-border); }
+#quote-more { margin-top: 2px; }
 
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; grid-template-rows: auto minmax(420px, 1fr) auto; }

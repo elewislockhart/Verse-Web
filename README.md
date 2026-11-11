@@ -13,6 +13,9 @@ Double-click `index.html`. It runs fully offline: no server and no internet need
   Use the arrow keys and Enter, or click a result. The volume checkboxes also limit word searches.
 - Click a circle to read the verse. The linking words are in bold. **Make this the center** moves the web to that verse.
 - Click a line to highlight the two verses it joins.
+- **Conference quotes** appear under the verse in the panel. One related quote shows when a verse opens; **Search Conference** adds three more, and **Show more** keeps adding three until there are none left. Each quote links to its paragraph in the original talk on churchofjesuschrist.org.
+  - Quotes whose footnotes cite this exact verse come first (a footnote citing just this verse beats one citing a long passage), then quotes citing the same chapter, then quotes that share several rare words with the verse. Quotes from one talk are spread out so it doesn't fill the list.
+  - Click any keyword in the verse to only show quotes containing it. Pick more words to narrow further: a quote must contain every picked word. Click a word again, or its × chip, to unpick it; **Clear** removes them all.
 - Keyword chips:
   - Click an automatic keyword to stop linking on it.
   - Add your own words under **Your keywords**.
@@ -32,6 +35,7 @@ The center verse is kept in the URL (`index.html#Alma%2032%3A21`), so you can bo
 | `js/stopwords.js` | Common words that never link verses. Edit freely. |
 | `js/text.js` | Tokenizer, KJV-aware stemmer, word index, keyword checks |
 | `js/graph.js` | Picks the verses for the web and the lines between them |
+| `js/talks.js` | Indexes conference talk paragraphs and ranks quotes for a verse |
 | `js/app.js` | Page wiring and drawing (Cytoscape.js) |
 | `js/vendor/cytoscape.min.js` | Cytoscape.js 3.30.2, saved locally so the page works offline |
 | `data/verses.js` | All 41,995 verses (generated) |

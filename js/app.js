@@ -2,7 +2,10 @@
 (function () {
   const T = window.VerseText;
   const G = window.VerseGraph;
+  const Q = window.VerseTalks;
   const $ = id => document.getElementById(id);
+  const QUOTES_DEFAULT = 1; // quotes shown when a verse opens
+  const QUOTES_STEP = 3;    // quotes added by "Search Conference" / "Show more"
 
   const state = {
     centerId: -1,
@@ -17,6 +20,10 @@
   let index = null;
   let cy = null;
   let web = null;
+  // Conference talks load after the web is drawn. status: loading | ready | none | error
+  const talks = { status: 'loading', index: null };
+  // Quotes for the verse open in the panel. Keyword picks reset when another verse opens.
+  const quotes = { verseId: -1, selected: new Set(), shown: QUOTES_DEFAULT, expanded: false };
 
   const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -33,6 +40,28 @@
     $('loading').hidden = true;
     const fromHash = T.findVerse(index, decodeURIComponent(location.hash.slice(1)));
     setCenter(fromHash >= 0 ? fromHash : T.findVerse(index, 'Alma 32:21'), false);
+    loadTalks();
+  }
+
+  // One script tag per conference (data/talks/YYYY-MM.js), listed in manifest.js.
+  // Script tags rather than fetch, so this still works when index.html is opened from disk.
+  function loadTalks() {
+    const ids = window.TALK_MANIFEST || [];
+    if (!Q || !ids.length) { talks.status = 'none'; renderQuotes(); return; }
+    let left = ids.length, failed = 0;
+    const done = () => {
+      if (--left) return;
+      talks.index = Q.buildTalkIndex(index, window.TALK_DATA || []);
+      talks.status = talks.index.paras.length ? 'ready' : failed ? 'error' : 'none';
+      renderQuotes();
+    };
+    for (const id of ids) {
+      const s = document.createElement('script');
+      s.src = `data/talks/${encodeURIComponent(id)}.js`;
+      s.onload = done;
+      s.onerror = () => { failed++; done(); };
+      document.body.appendChild(s);
+    }
   }
 
   function fail(msg) {
@@ -185,6 +214,26 @@
       if (b) setCenter(Number(b.dataset.center));
     });
     $('panel-center').addEventListener('click', () => { if (state.selectedId >= 0) setCenter(state.selectedId); });
+
+    // Click (or Enter/Space on) a keyword in the verse to pick or unpick it for quotes.
+    const toggleFromEvent = e => {
+      const w = e.target.closest('[data-stem]');
+      if (!w) return;
+      e.preventDefault();
+      toggleKeyword(w.dataset.stem);
+    };
+    $('panel-text').addEventListener('click', toggleFromEvent);
+    $('panel-text').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') toggleFromEvent(e); });
+    $('quote-filter').addEventListener('click', e => {
+      const b = e.target.closest('[data-unstem]');
+      if (b) toggleKeyword(b.dataset.unstem);
+      else if (e.target.closest('#quote-clear')) { quotes.selected.clear(); keywordsChanged(); }
+    });
+    $('quote-more').addEventListener('click', () => {
+      quotes.shown += QUOTES_STEP;
+      quotes.expanded = true;
+      renderQuotes();
+    });
 
     window.addEventListener('hashchange', () => {
       const id = T.findVerse(index, decodeURIComponent(location.hash.slice(1)));
@@ -391,15 +440,102 @@
   // ---------- verse panel ----------
   // Verse text as HTML: words whose stem is in `stems` (on a line) in bold, and every
   // other keyword (any word not on the common list) underlined, so it's clear they count.
-  function boldText(text, stems) {
+  // With `picked` (a Set), each keyword is also a toggle for the quote filter.
+  function boldText(text, stems, picked = null) {
     let html = '', last = 0;
     for (const t of T.tokenize(text)) {
       if (!t.stem) continue;
       const tag = stems.has(t.stem) ? 'b' : 'u';
-      html += esc(text.slice(last, t.start)) + `<${tag}>` + esc(text.slice(t.start, t.end)) + `</${tag}>`;
+      const attrs = picked
+        ? ` class="kw${picked.has(t.stem) ? ' kw-on' : ''}" data-stem="${esc(t.stem)}" role="button" tabindex="0"` +
+          ` aria-pressed="${picked.has(t.stem)}" title="Only show quotes with this word"`
+        : '';
+      html += esc(text.slice(last, t.start)) + `<${tag}${attrs}>` + esc(text.slice(t.start, t.end)) + `</${tag}>`;
       last = t.end;
     }
     return html + esc(text.slice(last));
+  }
+
+  // Quote text with the verse's keywords (or the picked ones) in bold.
+  function markQuote(text, stems) {
+    let html = '', last = 0;
+    for (const t of T.tokenize(text)) {
+      if (!t.stem || !stems.has(t.stem)) continue;
+      html += esc(text.slice(last, t.start)) + '<b>' + esc(text.slice(t.start, t.end)) + '</b>';
+      last = t.end;
+    }
+    return html + esc(text.slice(last));
+  }
+
+  // The word as it appears in the verse, for labels ("faithful", not the stem "faith").
+  function wordForStem(id, stem) {
+    const t = T.tokenize(index.verses[id][3]).find(t => t.stem === stem);
+    return t ? t.form : stem;
+  }
+
+  function toggleKeyword(stem) {
+    if (quotes.selected.has(stem)) quotes.selected.delete(stem); else quotes.selected.add(stem);
+    keywordsChanged();
+  }
+
+  function keywordsChanged() {
+    quotes.shown = quotes.expanded ? QUOTES_STEP : QUOTES_DEFAULT;
+    const id = quotes.verseId;
+    if (id < 0) return;
+    const node = web && web.nodes.find(nd => nd.id === id);
+    $('panel-text').innerHTML = boldText(index.verses[id][3], new Set(node ? node.highlightStems : []), quotes.selected);
+    renderQuotes();
+  }
+
+  function renderQuotes() {
+    const id = quotes.verseId;
+    const list = $('quote-list'), status = $('quote-status'), more = $('quote-more'), filter = $('quote-filter');
+    if (id < 0) return;
+    const picked = [...quotes.selected];
+    filter.innerHTML = picked.length
+      ? 'Only quotes with: ' + picked.map(s =>
+        `<button type="button" class="pick" data-unstem="${esc(s)}" aria-label="Remove ${esc(wordForStem(id, s))}">` +
+        `${esc(wordForStem(id, s))} <span aria-hidden="true">×</span></button>`).join(' ') +
+        ' <button type="button" class="link" id="quote-clear">Clear</button>'
+      : '<span class="hint">Click a word in the verse to only see quotes with it.</span>';
+    more.hidden = true;
+    if (talks.status !== 'ready') {
+      list.innerHTML = '';
+      status.textContent = {
+        loading: 'Loading conference talks…',
+        none: 'No conference talks found. Add some with tools/scrape_conference.py.',
+        error: 'Could not load the conference talks in data/talks/.',
+      }[talks.status];
+      return;
+    }
+    const results = Q.findQuotes(talks.index, index, id, { keywords: picked });
+    const verseStems = new Set(index.stemsByVerse[id]);
+    const boldStems = picked.length ? new Set(picked) : verseStems;
+    const chapter = index.verses[id][0].replace(/:\d+$/, '');
+    list.innerHTML = results.slice(0, quotes.shown).map(q => {
+      const { conference, talk, paragraph } = Q.paragraphOf(talks.index, q);
+      const why = q.reason === 'cites' ? `Cites ${index.verses[id][0]}`
+        : q.reason === 'chapter' ? `Cites ${chapter}`
+        : 'Shares: ' + q.shared.slice(0, 5).map(s => wordForStem(id, s)).join(', ');
+      return `<article class="quote">
+        <p class="quote-text">${markQuote(paragraph.text, boldStems)}</p>
+        <p class="quote-src"><a href="${esc(Q.quoteLink(talk, paragraph))}" target="_blank" rel="noopener">${esc(talk.title)}</a><br>
+          ${esc(talk.speaker)} · ${esc(conference.title)}</p>
+        <span class="quote-why ${q.reason}">${esc(why)}</span>
+      </article>`;
+    }).join('');
+    const n = results.length, shown = Math.min(quotes.shown, n);
+    if (!n) {
+      status.textContent = picked.length
+        ? `No conference quotes contain ${picked.length > 1 ? 'all of: ' : ''}${picked.map(s => wordForStem(id, s)).join(', ')}.`
+        : 'No related conference quotes found for this verse.';
+    } else if (shown < n) {
+      status.textContent = `Showing ${shown} of ${n} related quote${n > 1 ? 's' : ''}.`;
+      more.textContent = quotes.expanded ? 'Show more' : 'Search Conference';
+      more.hidden = false;
+    } else {
+      status.textContent = n === 1 ? 'That is the only related quote.' : `All ${n} related quotes shown.`;
+    }
   }
 
   // Both verses joined by a line, with only that line's keywords in bold.
@@ -428,7 +564,13 @@
     $('panel-single').hidden = false;
     const v = index.verses[id];
     const node = web && web.nodes.find(nd => nd.id === id);
-    const html = boldText(v[3], new Set(node ? node.highlightStems : []));
+    if (quotes.verseId !== id) {
+      quotes.verseId = id;
+      quotes.selected.clear();
+      quotes.shown = QUOTES_DEFAULT;
+      quotes.expanded = false;
+    }
+    const html = boldText(v[3], new Set(node ? node.highlightStems : []), quotes.selected);
     $('panel-title').textContent = v[0];
     $('panel-volume').textContent = index.volumes[v[2]];
     $('panel-text').innerHTML = html;
@@ -441,6 +583,7 @@
       : '';
     $('panel-center').hidden = id === state.centerId;
     $('panel').hidden = false;
+    renderQuotes();
     if (cy) markSelected();
   }
   function closePanel() {

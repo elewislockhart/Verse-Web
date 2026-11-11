@@ -76,10 +76,17 @@
       <div id="panel-single">
       <h2 id="panel-title"></h2>
       <p id="panel-volume" class="hint"></p>
-      <p class="hint legend"><b>Bold</b>: words on a line to this verse. <u>Underlined</u>: other keywords.</p>
+      <p class="hint legend"><b>Bold</b>: words on a line to this verse. <u>Underlined</u>: other keywords. Click a keyword to only see conference quotes with it.</p>
       <p id="panel-text" class="verse-text"></p>
       <p id="panel-links" class="hint"></p>
       <button id="panel-center" type="button">Make this the center</button>
+      <section id="quotes" class="quotes" aria-labelledby="quotes-title">
+        <h3 id="quotes-title">Conference quotes</h3>
+        <div id="quote-filter" class="quote-filter"></div>
+        <div id="quote-list" class="quote-list" aria-live="polite"></div>
+        <p id="quote-status" class="hint"></p>
+        <button id="quote-more" type="button" hidden>Search Conference</button>
+      </section>
       </div>
     </aside>
   </main>
@@ -88,7 +95,9 @@
   <script src="js/stopwords.js"></script>
   <script src="js/text.js"></script>
   <script src="js/graph.js"></script>
+  <script src="js/talks.js"></script>
   <script src="data/verses.js"></script>
+  <script src="data/talks/manifest.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
